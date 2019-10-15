@@ -1,10 +1,13 @@
 package com.atlasClientLocation;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.location.Location;
+import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -35,6 +38,8 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public final String LOG_TAG = "TESTLOCATIONTRACKING";
     private static final int REQUEST_CODE = 1000;
     private static final int REQUEST_SETTINGS_CONTINUOUS_UPDATE = 11404;
+    LocationService myService;
+    boolean isBound = false;
 
 
     public BackgroundLocationTrackingModule(ReactApplicationContext reactContext) {
@@ -80,9 +85,33 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         }else {
             Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
             getContext().startService(locationServiceIntent);
+            getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
         }
 
     }
+
+    @ReactMethod
+    public void stopLocationTracking(){
+        Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
+        Log.d(LOG_TAG, "ALL POINTS: "+myService.getPoints());
+        getContext().unbindService(serviceConnection);
+        getContext().stopService(locationServiceIntent);
+    }
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.d(LOG_TAG, "onServiceConnected called ");
+            LocationService.LocalBinder localBinder = (LocationService.LocalBinder) iBinder;
+            myService = localBinder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            isBound = false;
+        }
+    };
 
     /**
      * Get react context
@@ -91,19 +120,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         return getReactApplicationContext();
     }
 
-    private void sendEvent(ReactContext reactContext,
-                           String eventName,
-                           @Nullable WritableMap params) {
-        reactContext
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, params);
-    }
-
-    public void sendData(){
-        WritableMap iData = Arguments.createMap();
-        iData.putDouble("data", 1.732);
-        sendEvent(reactContext, "location", iData);
-    }
 
     private void invokeSuccess(WritableMap data) {
         getContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)

@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
+import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
@@ -20,15 +21,33 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
 
-public class LocationService extends Service {
+
+public class LocationService extends Service  {
 
     public static final String NOTIFICATON_CHANNEL_ID = "LOCATION_SERVICE_CHANNEL";
     public static final String LOG_TAG = "TESTLOCATIONTRACKING";
+    private static final String FILE_NAME = "points.txt";
 
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
+
+    private final IBinder serviceBinder = new LocalBinder();
+
+    ArrayList<Map> points = new ArrayList<>();
+
 
     @Override
     public void onCreate() {
@@ -54,7 +73,17 @@ public class LocationService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return serviceBinder;
+    }
+
+    public class LocalBinder extends Binder {
+        LocationService getService(){
+            return LocationService.this;
+        }
+    }
+
+    public ArrayList getPoints(){
+        return points;
     }
 
     public void createNotificationChannel() {
@@ -93,6 +122,25 @@ public class LocationService extends Service {
 
                     }
                     Location location = locationResult.getLastLocation();
+                    Map locationData = LocationHelpers.convertToMap(location);
+
+
+                    points.add(locationData);
+
+                    Log.d(LOG_TAG, "locationDataMap: "+ points);
+//
+//                    try {
+//                        FileOutputStream fos = openFileOutput(FILE_NAME, MODE_APPEND);
+//                        ObjectOutputStream ois = new ObjectOutputStream(fos);
+//                        ois.writeObject(locationData);
+//                        ois.close();
+//                        fos.close();
+//
+//                    }catch (FileNotFoundException e) {
+//                        System.out.println("File not found");
+//                    } catch (IOException e) {
+//                        System.out.println("Error initializing stream");
+//                    }
 
                     // write the data to disk ()
                     // Send only important events through broadcast to the module
@@ -104,6 +152,22 @@ public class LocationService extends Service {
 
             fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
         };
+    }
+
+    @Override
+    public void onDestroy(){
+//        try{
+//            Object locationDataFromFile;
+//            FileInputStream fis = openFileInput(FILE_NAME);
+//            ObjectInputStream ois = new ObjectInputStream(fis);
+//            locationDataFromFile =  ois.readObject();
+//            Log.d(LOG_TAG, "readingFromFile:"+ locationDataFromFile);
+//        }catch(Exception ex) {
+//            ex.printStackTrace();
+//        }
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
+        super.onDestroy();
+        //stopSelf();
     }
 
 }
