@@ -9,7 +9,10 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
 import android.util.Log;
+import java.util.Map;
+import java.util.ArrayList;
 import android.widget.Toast;
+import com.facebook.react.bridge.Promise;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -19,6 +22,8 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableArray;
+
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -96,6 +101,32 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         Log.d(LOG_TAG, "ALL POINTS: "+myService.getPoints());
         getContext().unbindService(serviceConnection);
         getContext().stopService(locationServiceIntent);
+    }
+
+    @ReactMethod
+    public void getPoints(
+      Promise promise) {
+
+      // Get points list is an array of map [{lat: 4, long: 5}, {lat: 5, long: 6}]
+      ArrayList<Map> list = myService.getPoints();
+
+      WritableArray out = Arguments.createArray();
+
+      for (int i = 0; i < list.size(); i++) {
+        WritableMap map = Arguments.createMap();
+
+        // {lat: 4, long: 5}
+        Map<String,Double> point = list.get(i);
+
+        // Putting {lat: 4, long: 5} => WritableMap
+        map.putDouble("latitude", point.get("latitude"));
+        map.putDouble("longitude", point.get("longitude"));
+
+        // Appending map to array [{lat: 4, long: 5}, ...]
+        out.pushMap(map);
+      }
+
+      promise.resolve(out);
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {

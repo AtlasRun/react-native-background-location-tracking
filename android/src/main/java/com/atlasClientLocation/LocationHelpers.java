@@ -10,7 +10,7 @@ public class LocationHelpers {
     public static Map convertToMap(Location location){
         Map<String, Double> locationMap = new HashMap<>();
 
-        locationMap.put("latitiude", location.getLatitude());
+        locationMap.put("latitude", location.getLatitude());
         locationMap.put("longitude", location.getLongitude());
        return locationMap;
     }
