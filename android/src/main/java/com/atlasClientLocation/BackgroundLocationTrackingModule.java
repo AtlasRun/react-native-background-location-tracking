@@ -108,7 +108,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
       Promise promise) {
 
       // Get points list is an array of map [{lat: 4, long: 5}, {lat: 5, long: 6}]
-      ArrayList<Map> list = myService.getPoints();
+      ArrayList<Location> list = myService.getPoints();
 
       WritableArray out = Arguments.createArray();
 
@@ -116,11 +116,13 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         WritableMap map = Arguments.createMap();
 
         // {lat: 4, long: 5}
-        Map<String,Double> point = list.get(i);
+        Location point = list.get(i);
 
         // Putting {lat: 4, long: 5} => WritableMap
-        map.putDouble("latitude", point.get("latitude"));
-        map.putDouble("longitude", point.get("longitude"));
+        map.putDouble("latitude", point.getLatitude());
+        map.putDouble("longitude", point.getLongitude());
+        map.putDouble("timestamp", ((Number)point.getTime()).doubleValue()/1000.0);
+        map.putDouble("accuracy", point.getAccuracy());
 
         // Appending map to array [{lat: 4, long: 5}, ...]
         out.pushMap(map);

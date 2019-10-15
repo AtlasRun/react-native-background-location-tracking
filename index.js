@@ -15,7 +15,7 @@ class BackgroundLocationTracking {
   }
 
   stopTracking() {
-    return Module.stopLocationTracking({});
+    return Module.stopLocationTracking();
   }
 
   on(name, f) {

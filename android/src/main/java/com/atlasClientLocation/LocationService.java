@@ -46,7 +46,7 @@ public class LocationService extends Service  {
 
     private final IBinder serviceBinder = new LocalBinder();
 
-    ArrayList<Map> points = new ArrayList<>();
+    ArrayList<Location> points = new ArrayList<>();
 
 
     @Override
@@ -122,10 +122,7 @@ public class LocationService extends Service  {
 
                     }
                     Location location = locationResult.getLastLocation();
-                    Map locationData = LocationHelpers.convertToMap(location);
-
-
-                    points.add(locationData);
+                    points.add(location);
 
                     Log.d(LOG_TAG, "locationDataMap: "+ points);
 //
