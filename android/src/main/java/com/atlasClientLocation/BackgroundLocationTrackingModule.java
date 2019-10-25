@@ -9,9 +9,7 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
 import android.util.Log;
-import java.util.Map;
 import java.util.ArrayList;
-import android.widget.Toast;
 import com.facebook.react.bridge.Promise;
 
 import com.facebook.react.bridge.Arguments;
@@ -41,8 +39,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
     public final String LOG_TAG = "TESTLOCATIONTRACKING";
-    private static final int REQUEST_CODE = 1000;
-    private static final int REQUEST_SETTINGS_CONTINUOUS_UPDATE = 11404;
     LocationService myService;
     boolean isBound = false;
 
@@ -70,13 +66,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     }
 
     @ReactMethod
-    public void showToast(String message, int duration) {
-        ReactApplicationContext context = getContext();
-        // TODO: Implement some actually useful functionality
-        Toast.makeText(getReactApplicationContext(), message, duration).show();
-    }
-
-    @ReactMethod
     public void requestLocation(ReadableMap options) {
         Log.d(LOG_TAG, "request location called");
         ReactApplicationContext context = getContext();
@@ -99,6 +88,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public void stopLocationTracking(){
         Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
         Log.d(LOG_TAG, "ALL POINTS: "+myService.getPoints());
+        myService.stopTracking();
         getContext().unbindService(serviceConnection);
         getContext().stopService(locationServiceIntent);
     }
@@ -137,6 +127,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             Log.d(LOG_TAG, "onServiceConnected called ");
             LocationService.LocalBinder localBinder = (LocationService.LocalBinder) iBinder;
             myService = localBinder.getService();
+            myService.startTracking();
             isBound = true;
         }
 
