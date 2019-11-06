@@ -20,7 +20,18 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class LocationService extends Service  {
@@ -34,24 +45,31 @@ public class LocationService extends Service  {
 
     private final IBinder serviceBinder = new LocalBinder();
     StateMachine stateMachine = new StateMachine(this);
-
+    LocationHelpers locationHelpers;
 
     ArrayList<Location> points = new ArrayList<>();
+    ArrayList<Map> serializedPoints = new ArrayList<>();
+    ArrayList<Map<String,Number>> fromFile = new ArrayList<>();
+    private FileOutputStream fos;
+    private volatile boolean called = false;
+
+    public LocationService() {
+        fos = null;
+    }
 
 
     @Override
     public void onCreate() {
-//        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-//        createNotificationChannel();
-//        buildLocationRequest();
-//        buildLocationCallback();
     }
 
     public void _startTracking(){
+      if(called) return;
+         called = true;
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         createNotificationChannel();
         buildLocationRequest();
         buildLocationCallback();
+
     }
 
     public void _stopTracking(){
@@ -98,6 +116,36 @@ public class LocationService extends Service  {
         stateMachine.setState(TrackingState.NOT_TRACKING.getValue());
     }
 
+    public ArrayList readPersistedPoints(){
+
+        try{
+            String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
+            FileInputStream fis = new FileInputStream(path);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            fromFile = (ArrayList<Map<String, Number>>) ois.readObject();
+            ois.close();
+            fis.close();
+            return fromFile;
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<Map<String, Number>>();
+    }
+
+    public void resetPersistedPoints(){
+        // File can be reset only when tracking has ended
+        if(stateMachine.getCurrentState() == TrackingState.NOT_TRACKING.getValue()){
+            try{
+                String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
+                new FileOutputStream(path).close();
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+        }
+    }
+
     public void createNotificationChannel() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(LOG_TAG, "notification channel called");
@@ -122,30 +170,59 @@ public class LocationService extends Service  {
     }
 
     private void buildLocationCallback() {
-        if (fusedLocationProviderClient !=null && locationRequest!=null){
-            locationCallback = new LocationCallback(){
 
-                @Override
-                public void onLocationResult(LocationResult locationResult) {
-                    Log.d(LOG_TAG, "LocationCallbacks entered");
-                    if(locationResult == null) {
-                        Log.d(LOG_TAG, "onLocationResult:"+ locationResult.getLocations());
-                        return;
+        try{
+            String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
+            File file = new File(path);
+            file.createNewFile();
+            if(file.createNewFile()){
+                Log.d(LOG_TAG, "File creation successful");
 
+            } else {
+                Log.d(LOG_TAG, "File already exists"+ file.getAbsolutePath());
+            }
+            fos = new FileOutputStream(file);
+            final ObjectOutputStream oos = new ObjectOutputStream(fos);
+            final long initialPosition = fos.getChannel().position();
+            Log.w(LOG_TAG, "INITIAL POSITION: " + initialPosition );
+            if (fusedLocationProviderClient !=null && locationRequest!=null){
+                locationCallback = new LocationCallback(){
+
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+                        Log.d(LOG_TAG, "LocationCallbacks entered");
+                        if(locationResult == null) {
+                            Log.d(LOG_TAG, "onLocationResult:"+ locationResult.getLocations());
+                            return;
+
+                        }
+                        Location location = locationResult.getLastLocation();
+                        points.add(location);
+                        serializedPoints.add(locationHelpers.convertToMap(location));
+                        Log.d(LOG_TAG, "serializedLocation:"+ serializedPoints);
+
+                        try {
+                            fos.getChannel().position(initialPosition);
+                            oos.reset();
+                            oos.writeObject(serializedPoints);
+                            oos.flush();
+                        }catch (IOException i){
+                            i.printStackTrace();
+                        }
+
+                        if(points.size()>0){
+                            stateMachine.setState(TrackingState.TRACKING_IN_PROGRESS.getValue());
+                        }
                     }
-                    Location location = locationResult.getLastLocation();
-                    points.add(location);
+                };
 
-                    if(points.size()>0){
-                        stateMachine.setState(TrackingState.TRACKING_IN_PROGRESS.getValue());
-                    }
-                }
+                fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
             };
+        }catch (IOException e){
+            e.printStackTrace();
+        }
 
-            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
-        };
     }
-
 
 
     @Override

@@ -9,7 +9,15 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
 import android.util.Log;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
+import java.util.Map;
+
 import com.facebook.react.bridge.Promise;
 
 import com.facebook.react.bridge.Arguments;
@@ -39,13 +47,12 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
     public final String LOG_TAG = "TESTLOCATIONTRACKING";
-    LocationService myService;
+    private LocationService myService;
     boolean isBound = false;
 
 
     public BackgroundLocationTrackingModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        //
         this.reactContext = reactContext;
         BroadcastReceiver locationUpdatesReceiver = new BroadcastReceiver() {
             @Override
@@ -56,7 +63,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             }
         };
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getReactApplicationContext());
-
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(locationUpdatesReceiver, new IntentFilter("location_data_action"));
     }
 
@@ -87,7 +93,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void stopLocationTracking(){
         Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
-        Log.d(LOG_TAG, "ALL POINTS: "+myService.getPoints());
+
         myService.stopTracking();
         getContext().unbindService(serviceConnection);
         getContext().stopService(locationServiceIntent);
@@ -119,6 +125,40 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
       }
 
       promise.resolve(out);
+    }
+
+    @ReactMethod
+    public void readPersistedPoints(Promise promise){
+        if(myService !=null) {
+            ArrayList<Map> persistedPoints = myService.readPersistedPoints();
+
+            WritableArray out = Arguments.createArray();
+
+            for (int i = 0; i < persistedPoints.size(); i++) {
+                WritableMap map = Arguments.createMap();
+
+                // {lat: 4, long: 5}
+                Map point = persistedPoints.get(i);
+
+//            // Putting {lat: 4, long: 5} => WritableMap
+                map.putDouble("latitude", (Double) point.get("latitude"));
+                map.putDouble("longitude", (Double) point.get("longitude"));
+                map.putDouble("timestamp", ((Number) point.get("timestamp")).doubleValue() / 1000.0);
+                map.putDouble("accuracy", (Float) point.get("accuracy"));
+
+                // Appending map to array [{lat: 4, long: 5}, ...]
+                out.pushMap(map);
+            }
+
+            promise.resolve(out);
+        }
+    }
+
+    @ReactMethod
+    public void resetPersistedPoints(){
+        if(myService!=null){
+            myService.resetPersistedPoints();
+        }
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {

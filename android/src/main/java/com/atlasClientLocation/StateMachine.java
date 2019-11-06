@@ -50,4 +50,8 @@ public class StateMachine {
         }
     }
 
+    public int getCurrentState(){
+        return this.currentState;
+    }
+
 }
