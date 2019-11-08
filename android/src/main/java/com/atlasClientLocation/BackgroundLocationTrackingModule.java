@@ -71,7 +71,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public void requestLocation(ReadableMap options) {
         if(called) return;
         called = true;
-        Log.d(LOG_TAG, "request location called");
+        //Log.d(LOG_TAG, "request location called");
         ReactApplicationContext context = getContext();
 
         if(!LocationUtils.hasLocationPermission(context)){

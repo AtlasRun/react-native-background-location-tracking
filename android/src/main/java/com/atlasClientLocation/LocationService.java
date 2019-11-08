@@ -51,10 +51,6 @@ public class LocationService extends Service  {
         fos = null;
 
     }
-  // TO DO
-    // - getPoints should be called even when the service is not active
-    // - if getPoints is called on the module before startTracking is called then return from the file to show the distacne
-    //
 
     @Override
     public void onCreate() {
@@ -120,7 +116,7 @@ public class LocationService extends Service  {
 
     public void createNotificationChannel() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(LOG_TAG, "notification channel called");
+            //Log.d(LOG_TAG, "notification channel called");
 
             android.app.NotificationChannel notificationChannel = new android.app.NotificationChannel(
                     NOTIFICATON_CHANNEL_ID,
@@ -156,13 +152,13 @@ public class LocationService extends Service  {
             fos = new FileOutputStream(file);
             final ObjectOutputStream oos = new ObjectOutputStream(fos);
             final long initialPosition = fos.getChannel().position();
-            Log.w(LOG_TAG, "INITIAL POSITION: " + initialPosition );
+            //Log.w(LOG_TAG, "INITIAL POSITION: " + initialPosition );
             if (fusedLocationProviderClient !=null && locationRequest!=null){
                 locationCallback = new LocationCallback(){
 
                     @Override
                     public void onLocationResult(LocationResult locationResult) {
-                        Log.d(LOG_TAG, "LocationCallbacks entered");
+                       // Log.d(LOG_TAG, "LocationCallbacks entered");
                         if(locationResult == null) {
                             Log.d(LOG_TAG, "onLocationResult:"+ locationResult.getLocations());
                             return;
