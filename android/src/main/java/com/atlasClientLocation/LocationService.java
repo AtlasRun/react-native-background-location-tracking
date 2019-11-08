@@ -26,11 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -49,22 +45,24 @@ public class LocationService extends Service  {
 
     ArrayList<Location> points = new ArrayList<>();
     ArrayList<Map> serializedPoints = new ArrayList<>();
-    ArrayList<Map<String,Number>> fromFile = new ArrayList<>();
     private FileOutputStream fos;
-    private volatile boolean called = false;
 
     public LocationService() {
         fos = null;
-    }
 
+    }
+  // TO DO
+    // - getPoints should be called even when the service is not active
+    // - if getPoints is called on the module before startTracking is called then return from the file to show the distacne
+    //
 
     @Override
     public void onCreate() {
+        serializedPoints = LocationHelpers.readPersistedPoints(getApplicationContext());
+        Log.w(LOG_TAG, "onCreate: "+ serializedPoints );
     }
 
     public void _startTracking(){
-      if(called) return;
-         called = true;
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         createNotificationChannel();
         buildLocationRequest();
@@ -104,7 +102,7 @@ public class LocationService extends Service  {
     }
 
     public ArrayList getPoints(){
-        return points;
+        return serializedPoints;
     }
 
 
@@ -116,23 +114,7 @@ public class LocationService extends Service  {
         stateMachine.setState(TrackingState.NOT_TRACKING.getValue());
     }
 
-    public ArrayList readPersistedPoints(){
 
-        try{
-            String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
-            FileInputStream fis = new FileInputStream(path);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            fromFile = (ArrayList<Map<String, Number>>) ois.readObject();
-            ois.close();
-            fis.close();
-            return fromFile;
-        }catch (IOException ioe){
-            ioe.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return new ArrayList<Map<String, Number>>();
-    }
 
     public void resetPersistedPoints(){
         // File can be reset only when tracking has ended
