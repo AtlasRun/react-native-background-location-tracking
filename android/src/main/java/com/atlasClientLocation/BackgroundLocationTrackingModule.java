@@ -140,9 +140,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void resetPersistedPoints(){
-        if(myService!=null){
-            myService.resetPersistedPoints();
-        }
+        LocationHelpers.resetPersistedPoints(getContext());
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {

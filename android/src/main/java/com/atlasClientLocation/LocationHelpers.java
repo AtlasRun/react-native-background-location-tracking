@@ -9,6 +9,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -45,6 +46,15 @@ public class LocationHelpers {
             e.printStackTrace();
         }
         return new ArrayList<Map<String, Number>>();
+    }
+
+    public static void resetPersistedPoints(Context context){
+            try{
+                String path = context.getFilesDir().getPath().toString()+"/locationData.txt";
+                new FileOutputStream(path).close();
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
     }
 
     public static WritableArray convertToWritableArray(ArrayList<Map> mapArrayList){

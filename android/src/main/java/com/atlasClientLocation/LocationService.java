@@ -116,17 +116,7 @@ public class LocationService extends Service  {
 
 
 
-    public void resetPersistedPoints(){
-        // File can be reset only when tracking has ended
-        if(stateMachine.getCurrentState() == TrackingState.NOT_TRACKING.getValue()){
-            try{
-                String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
-                new FileOutputStream(path).close();
-            }catch (IOException ioe){
-                ioe.printStackTrace();
-            }
-        }
-    }
+
 
     public void createNotificationChannel() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
