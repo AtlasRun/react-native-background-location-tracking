@@ -18,6 +18,14 @@ class BackgroundLocationTracking {
     return Module.stopLocationTracking();
   }
 
+  readPersistedPoints(){
+    return Module.readPersistedPoints();
+  }
+
+  resetPersistedPoints(){
+    return Module.resetPersistedPoints();
+  }
+
   on(name, f) {
     this.eventEmitter.addListener(name, f);
   }

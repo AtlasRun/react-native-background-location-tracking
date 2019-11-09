@@ -14,7 +14,6 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
-import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -23,14 +22,11 @@ import com.google.android.gms.location.LocationServices;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 
 
@@ -38,29 +34,47 @@ public class LocationService extends Service  {
 
     public static final String NOTIFICATON_CHANNEL_ID = "LOCATION_SERVICE_CHANNEL";
     public static final String LOG_TAG = "TESTLOCATIONTRACKING";
-    private static final String FILE_NAME = "points.txt";
 
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
 
     private final IBinder serviceBinder = new LocalBinder();
+    StateMachine stateMachine = new StateMachine(this);
+    LocationHelpers locationHelpers;
 
     ArrayList<Location> points = new ArrayList<>();
+    ArrayList<Map> serializedPoints = new ArrayList<>();
+    private FileOutputStream fos;
 
+    public LocationService() {
+        fos = null;
+
+    }
 
     @Override
     public void onCreate() {
+        serializedPoints = LocationHelpers.readPersistedPoints(getApplicationContext());
+        Log.w(LOG_TAG, "onCreate: "+ serializedPoints );
+    }
+
+    public void _startTracking(){
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         createNotificationChannel();
         buildLocationRequest();
         buildLocationCallback();
+
     }
+
+    public void _stopTracking(){
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
+    }
+
+
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-
-        Intent notificationIntent = new Intent(this, LocationService.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         Notification notification = new NotificationCompat.Builder(this, NOTIFICATON_CHANNEL_ID)
                 .setContentTitle("Location Service")
                 .setContentText("Running...")
@@ -73,6 +87,7 @@ public class LocationService extends Service  {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(LOG_TAG, "onBind: IS CALLED");
         return serviceBinder;
     }
 
@@ -83,12 +98,25 @@ public class LocationService extends Service  {
     }
 
     public ArrayList getPoints(){
-        return points;
+        return serializedPoints;
     }
+
+
+    public void startTracking(){
+        stateMachine.setState(TrackingState.WAITING_FOR_SIGNAL.getValue());
+    }
+
+    public void stopTracking(){
+        stateMachine.setState(TrackingState.NOT_TRACKING.getValue());
+    }
+
+
+
+
 
     public void createNotificationChannel() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(LOG_TAG, "notification channel called");
+            //Log.d(LOG_TAG, "notification channel called");
 
             android.app.NotificationChannel notificationChannel = new android.app.NotificationChannel(
                     NOTIFICATON_CHANNEL_ID,
@@ -110,61 +138,65 @@ public class LocationService extends Service  {
     }
 
     private void buildLocationCallback() {
-        if (fusedLocationProviderClient !=null && locationRequest!=null){
-            locationCallback = new LocationCallback(){
 
-                @Override
-                public void onLocationResult(LocationResult locationResult) {
-                    Log.d(LOG_TAG, "LocationCallbacks entered");
-                    if(locationResult == null) {
-                        Log.d(LOG_TAG, "onLocationResult:"+ locationResult.getLocations());
-                        return;
+        try{
+            String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
+            File file = new File(path);
+            file.createNewFile();
+            if(file.createNewFile()){
+                Log.d(LOG_TAG, "File creation successful");
 
+            } else {
+                Log.d(LOG_TAG, "File already exists"+ file.getAbsolutePath());
+            }
+            fos = new FileOutputStream(file);
+            final ObjectOutputStream oos = new ObjectOutputStream(fos);
+            final long initialPosition = fos.getChannel().position();
+            //Log.w(LOG_TAG, "INITIAL POSITION: " + initialPosition );
+            if (fusedLocationProviderClient !=null && locationRequest!=null){
+                locationCallback = new LocationCallback(){
+
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+                       // Log.d(LOG_TAG, "LocationCallbacks entered");
+                        if(locationResult == null) {
+                            Log.d(LOG_TAG, "onLocationResult:"+ locationResult.getLocations());
+                            return;
+
+                        }
+                        Location location = locationResult.getLastLocation();
+                        points.add(location);
+                        serializedPoints.add(locationHelpers.convertToMap(location));
+                        Log.d(LOG_TAG, "serializedLocation:"+ serializedPoints);
+
+                        try {
+                            fos.getChannel().position(initialPosition);
+                            oos.reset();
+                            oos.writeObject(serializedPoints);
+                            oos.flush();
+                        }catch (IOException i){
+                            i.printStackTrace();
+                        }
+
+                        if(points.size()>0){
+                            stateMachine.setState(TrackingState.TRACKING_IN_PROGRESS.getValue());
+                        }
                     }
-                    Location location = locationResult.getLastLocation();
-                    points.add(location);
+                };
 
-                    Log.d(LOG_TAG, "locationDataMap: "+ points);
-//
-//                    try {
-//                        FileOutputStream fos = openFileOutput(FILE_NAME, MODE_APPEND);
-//                        ObjectOutputStream ois = new ObjectOutputStream(fos);
-//                        ois.writeObject(locationData);
-//                        ois.close();
-//                        fos.close();
-//
-//                    }catch (FileNotFoundException e) {
-//                        System.out.println("File not found");
-//                    } catch (IOException e) {
-//                        System.out.println("Error initializing stream");
-//                    }
-
-                    // write the data to disk ()
-                    // Send only important events through broadcast to the module
-                    Intent intent = new Intent("location_data_action");
-                    intent.putExtra("location_data", location);
-                    sendBroadcast(intent);
-                }
+                fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
             };
+        }catch (IOException e){
+            e.printStackTrace();
+        }
 
-            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
-        };
     }
+
 
     @Override
     public void onDestroy(){
-//        try{
-//            Object locationDataFromFile;
-//            FileInputStream fis = openFileInput(FILE_NAME);
-//            ObjectInputStream ois = new ObjectInputStream(fis);
-//            locationDataFromFile =  ois.readObject();
-//            Log.d(LOG_TAG, "readingFromFile:"+ locationDataFromFile);
-//        }catch(Exception ex) {
-//            ex.printStackTrace();
-//        }
-        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
         super.onDestroy();
-        //stopSelf();
+        stopSelf();
     }
 
 }

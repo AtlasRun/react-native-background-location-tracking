@@ -9,9 +9,10 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
 import android.util.Log;
-import java.util.Map;
+
 import java.util.ArrayList;
-import android.widget.Toast;
+import java.util.Map;
+
 import com.facebook.react.bridge.Promise;
 
 import com.facebook.react.bridge.Arguments;
@@ -19,7 +20,6 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableArray;
@@ -41,15 +41,14 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
     public final String LOG_TAG = "TESTLOCATIONTRACKING";
-    private static final int REQUEST_CODE = 1000;
-    private static final int REQUEST_SETTINGS_CONTINUOUS_UPDATE = 11404;
-    LocationService myService;
+    private LocationService myService;
     boolean isBound = false;
+    private volatile boolean called = false;
+    ArrayList<Map> persistedPoints = new ArrayList<>();
 
 
     public BackgroundLocationTrackingModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        //
         this.reactContext = reactContext;
         BroadcastReceiver locationUpdatesReceiver = new BroadcastReceiver() {
             @Override
@@ -60,7 +59,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             }
         };
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getReactApplicationContext());
-
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(locationUpdatesReceiver, new IntentFilter("location_data_action"));
     }
 
@@ -70,15 +68,10 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     }
 
     @ReactMethod
-    public void showToast(String message, int duration) {
-        ReactApplicationContext context = getContext();
-        // TODO: Implement some actually useful functionality
-        Toast.makeText(getReactApplicationContext(), message, duration).show();
-    }
-
-    @ReactMethod
     public void requestLocation(ReadableMap options) {
-        Log.d(LOG_TAG, "request location called");
+        if(called) return;
+        called = true;
+        //Log.d(LOG_TAG, "request location called");
         ReactApplicationContext context = getContext();
 
         if(!LocationUtils.hasLocationPermission(context)){
@@ -98,37 +91,56 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void stopLocationTracking(){
         Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
-        Log.d(LOG_TAG, "ALL POINTS: "+myService.getPoints());
+        myService.stopTracking();
         getContext().unbindService(serviceConnection);
         getContext().stopService(locationServiceIntent);
+        called = false;
     }
 
     @ReactMethod
     public void getPoints(
       Promise promise) {
 
-      // Get points list is an array of map [{lat: 4, long: 5}, {lat: 5, long: 6}]
-      ArrayList<Location> list = myService.getPoints();
+        if(myService == null) {
+            persistedPoints = LocationHelpers.readPersistedPoints(getContext());
+        } else {
+          persistedPoints = myService.getPoints();
+        }
+            WritableArray out = LocationHelpers.convertToWritableArray(persistedPoints);
+            promise.resolve(out);
 
-      WritableArray out = Arguments.createArray();
+    }
 
-      for (int i = 0; i < list.size(); i++) {
-        WritableMap map = Arguments.createMap();
+    @ReactMethod
+    public void readPersistedPoints(Promise promise){
+        if(myService !=null) {
+            ArrayList<Map> persistedPoints = LocationHelpers.readPersistedPoints(getContext());
 
-        // {lat: 4, long: 5}
-        Location point = list.get(i);
+            WritableArray out = Arguments.createArray();
 
-        // Putting {lat: 4, long: 5} => WritableMap
-        map.putDouble("latitude", point.getLatitude());
-        map.putDouble("longitude", point.getLongitude());
-        map.putDouble("timestamp", ((Number)point.getTime()).doubleValue()/1000.0);
-        map.putDouble("accuracy", point.getAccuracy());
+            for (int i = 0; i < persistedPoints.size(); i++) {
+                WritableMap map = Arguments.createMap();
 
-        // Appending map to array [{lat: 4, long: 5}, ...]
-        out.pushMap(map);
-      }
+                // {lat: 4, long: 5}
+                Map point = persistedPoints.get(i);
 
-      promise.resolve(out);
+            // Putting {lat: 4, long: 5} => WritableMap
+                map.putDouble("latitude", (double) point.get("latitude"));
+                map.putDouble("longitude", (double) point.get("longitude"));
+                map.putDouble("timestamp", (double) point.get("timestamp"));
+                map.putDouble("accuracy", (float) point.get("accuracy"));
+
+                // Appending map to array [{lat: 4, long: 5}, ...]
+                out.pushMap(map);
+            }
+
+            promise.resolve(out);
+        }
+    }
+
+    @ReactMethod
+    public void resetPersistedPoints(){
+        LocationHelpers.resetPersistedPoints(getContext());
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -137,6 +149,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             Log.d(LOG_TAG, "onServiceConnected called ");
             LocationService.LocalBinder localBinder = (LocationService.LocalBinder) iBinder;
             myService = localBinder.getService();
+            myService.startTracking();
             isBound = true;
         }
 
