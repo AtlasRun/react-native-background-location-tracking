@@ -1,9 +1,11 @@
-import { NativeModules, NativeEventEmitter } from 'react-native';
+import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 const { BackgroundLocationTracking: Module } = NativeModules;
 
 class BackgroundLocationTracking {
   constructor() {
-    this.eventEmitter = new NativeEventEmitter(Module);
+    if (Platform.OS === 'android'){
+      this.eventEmitter = new NativeEventEmitter(Module);
+    }
   }
 
   async getPoints() {
