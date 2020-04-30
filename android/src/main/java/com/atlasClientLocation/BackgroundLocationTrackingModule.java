@@ -46,6 +46,8 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     private volatile boolean called = false;
     ArrayList<Map> persistedPoints = new ArrayList<>();
 
+    public static final String LOGTAG = "PERMISSIONS";
+
 
     public BackgroundLocationTrackingModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -76,11 +78,13 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
         if(!LocationUtils.hasLocationPermission(context)){
 
+
             invokeError(
                     LocationError.SETTINGS_NOT_SATISFIED.getValue(),
                     "Location permission not granted."
             );
         }else {
+            Log.d(LOGTAG, "requestLocation: "+ LocationUtils.hasLocationPermission(context));
             Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
             getContext().startService(locationServiceIntent);
             getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );

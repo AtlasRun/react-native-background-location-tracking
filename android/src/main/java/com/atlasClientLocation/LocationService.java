@@ -75,7 +75,7 @@ public class LocationService extends Service  {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-        Notification notification = new NotificationCompat.Builder(this, NOTIFICATON_CHANNEL_ID)
+        Notification notification = new NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
                 .setContentTitle("Location Service")
                 .setContentText("Running...")
                 .setContentIntent(pendingIntent)
