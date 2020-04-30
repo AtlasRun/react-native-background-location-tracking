@@ -56,6 +56,4 @@ public class LocationUtils {
         return locationData;
     }
 
-
-
 }
