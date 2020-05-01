@@ -60,7 +60,7 @@ public class LocationService extends Service  {
 
     public void _startTracking(){
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        createNotificationChannel();
+
         buildLocationRequest();
         buildLocationCallback();
 
@@ -75,6 +75,7 @@ public class LocationService extends Service  {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
                 .setContentTitle("Location Service")
                 .setContentText("Running...")
