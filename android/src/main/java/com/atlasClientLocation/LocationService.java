@@ -119,7 +119,7 @@ public class LocationService extends Service  {
             //Log.d(LOG_TAG, "notification channel called");
 
             android.app.NotificationChannel notificationChannel = new android.app.NotificationChannel(
-                    NOTIFICATON_CHANNEL_ID,
+                    getString(R.string.notification_channel_id),
                     "Location Service Channel",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
