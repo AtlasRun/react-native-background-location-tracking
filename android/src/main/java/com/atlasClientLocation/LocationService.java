@@ -55,7 +55,7 @@ public class LocationService extends Service  {
     @Override
     public void onCreate() {
         serializedPoints = LocationHelpers.readPersistedPoints(getApplicationContext());
-        Log.w(LOG_TAG, "onCreate: "+ serializedPoints );
+//        Log.w(LOG_TAG, "onCreate: "+ serializedPoints );
     }
 
     public void _startTracking(){
@@ -74,7 +74,9 @@ public class LocationService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        Intent intent1 = new Intent(this, BackgroundLocationTrackingModule.class);
+        intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent1, PendingIntent.FLAG_CANCEL_CURRENT);
         createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
                 .setContentTitle("Location Service")
@@ -88,7 +90,7 @@ public class LocationService extends Service  {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(LOG_TAG, "onBind: IS CALLED");
+//        Log.d(LOG_TAG, "onBind: IS CALLED");
         return serviceBinder;
     }
 
@@ -145,10 +147,10 @@ public class LocationService extends Service  {
             File file = new File(path);
             file.createNewFile();
             if(file.createNewFile()){
-                Log.d(LOG_TAG, "File creation successful");
+//                Log.d(LOG_TAG, "File creation successful");
 
             } else {
-                Log.d(LOG_TAG, "File already exists"+ file.getAbsolutePath());
+//                Log.d(LOG_TAG, "File already exists"+ file.getAbsolutePath());
             }
             fos = new FileOutputStream(file);
             final ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -161,14 +163,13 @@ public class LocationService extends Service  {
                     public void onLocationResult(LocationResult locationResult) {
                        // Log.d(LOG_TAG, "LocationCallbacks entered");
                         if(locationResult == null) {
-                            Log.d(LOG_TAG, "onLocationResult:"+ locationResult.getLocations());
                             return;
 
                         }
                         Location location = locationResult.getLastLocation();
                         points.add(location);
                         serializedPoints.add(locationHelpers.convertToMap(location));
-                        Log.d(LOG_TAG, "serializedLocation:"+ serializedPoints);
+                        Log.d(LOG_TAG, "serializedLocation:"+ serializedPoints.size());
 
                         try {
                             fos.getChannel().position(initialPosition);

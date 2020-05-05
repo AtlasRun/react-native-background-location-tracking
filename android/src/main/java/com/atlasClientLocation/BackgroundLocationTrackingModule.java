@@ -84,7 +84,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
                     "Location permission not granted."
             );
         }else {
-            Log.d(LOGTAG, "requestLocation: "+ LocationUtils.hasLocationPermission(context));
+//            Log.d(LOGTAG, "requestLocation: "+ LocationUtils.hasLocationPermission(context));
             Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
             getContext().startService(locationServiceIntent);
             getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
@@ -150,7 +150,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            Log.d(LOG_TAG, "onServiceConnected called ");
+//            Log.d(LOG_TAG, "onServiceConnected called ");
             LocationService.LocalBinder localBinder = (LocationService.LocalBinder) iBinder;
             myService = localBinder.getService();
             myService.startTracking();
