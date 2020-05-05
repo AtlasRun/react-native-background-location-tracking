@@ -74,9 +74,9 @@ public class LocationService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-        Intent intent1 = new Intent(this, BackgroundLocationTrackingModule.class);
-        intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent1, PendingIntent.FLAG_CANCEL_CURRENT);
+//        Intent intent1 = new Intent(this, BackgroundLocationTrackingModule.class);
+//        intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
                 .setContentTitle("Location Service")
