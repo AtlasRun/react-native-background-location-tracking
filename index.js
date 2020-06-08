@@ -11,6 +11,15 @@ class BackgroundLocationTracking {
   async getPoints() {
     return await Module.getPoints();
   }
+//
+//  async checkPowerOptimizationSettings() {
+//   return await Module.checkPowerOptimizationSettings(packageName);
+//  }
+
+  showPowerOptimizationSettings() {
+     return Module.showPowerOptimizationSettings();
+  }
+
 
   startTracking() {
     return Module.requestLocation({});

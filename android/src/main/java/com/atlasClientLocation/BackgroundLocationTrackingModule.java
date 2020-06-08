@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -67,6 +68,26 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     @Override
     public String getName() {
         return "BackgroundLocationTracking";
+    }
+
+//    @ReactMethod
+//    public void checkPowerOptimizationSettings(String packageName, Promise promise) {
+//        Boolean result = PowerManager.isIgnoringBatteryOptimizations(packageName);
+//        android.util.Log.d("battery", "checkPowerOptimizationSettings: "+ packageName);
+//                promise.resolve(result);
+//    }
+
+    @ReactMethod
+    public void showPowerOptimizationSettings() {
+        ReactApplicationContext context = getContext();
+        Intent settingsIntent = new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+        settingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (settingsIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
+            context.startActivity(settingsIntent);
+            android.util.Log.d("Settings", "requestLocation: this is called");
+        }
+
     }
 
     @ReactMethod
