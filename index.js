@@ -11,10 +11,10 @@ class BackgroundLocationTracking {
   async getPoints() {
     return await Module.getPoints();
   }
-//
-//  async checkPowerOptimizationSettings() {
-//   return await Module.checkPowerOptimizationSettings(packageName);
-//  }
+
+  async checkPowerOptimizationSettings() {
+   return await Module.checkPowerOptimizationSettings();
+  }
 
   showPowerOptimizationSettings() {
      return Module.showPowerOptimizationSettings();
