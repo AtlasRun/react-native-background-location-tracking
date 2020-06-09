@@ -10,6 +10,7 @@ import android.location.Location;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+import android.provider.Settings;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -88,6 +89,29 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             context.startActivity(settingsIntent);
         }
 
+    }
+
+    @ReactMethod
+    public void checkSystemLocationAccuracySettings(Promise promise) {
+        ReactApplicationContext context = getContext();
+        try{
+            int locationAccuracy = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+            android.util.Log.d("location mode", "checkSystemHighAccuracySettings: "+ Settings.Secure.LOCATION_MODE_HIGH_ACCURACY);
+        }catch (Settings.SettingNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @ReactMethod
+    public void showSystemLocationAccuracySettings() {
+        ReactApplicationContext context = getContext();
+        Intent settingsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        settingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (settingsIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
+            context.startActivity(settingsIntent);
+        }
     }
 
     @ReactMethod
