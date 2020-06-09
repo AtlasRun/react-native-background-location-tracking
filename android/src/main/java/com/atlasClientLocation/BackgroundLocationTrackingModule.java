@@ -75,8 +75,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         ReactApplicationContext context = getContext();
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         Boolean result = pm.isIgnoringBatteryOptimizations(context.getPackageName());
-        android.util.Log.d("battery", "checkPowerOptimizationSettings: "+ packageName);
-                promise.resolve(result);
+        promise.resolve(result);
     }
 
     @ReactMethod
@@ -87,7 +86,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
         if (settingsIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
             context.startActivity(settingsIntent);
-            android.util.Log.d("Settings", "requestLocation: this is called");
         }
 
     }
