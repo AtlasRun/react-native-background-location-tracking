@@ -99,7 +99,9 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             if (locationAccuracy == Settings.Secure.LOCATION_MODE_HIGH_ACCURACY){
                 promise.resolve(true);
             }
-            android.util.Log.d("location mode", "checkSystemHighAccuracySettings: "+ locationAccuracy);
+            else {
+                promise.resolve(false);
+            }
         }catch (Settings.SettingNotFoundException e) {
             promise.resolve(false);
             e.printStackTrace();
