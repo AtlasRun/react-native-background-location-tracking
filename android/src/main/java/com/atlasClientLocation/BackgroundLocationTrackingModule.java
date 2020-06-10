@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
+import android.location.LocationManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
@@ -94,17 +96,25 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void checkSystemLocationAccuracySettings(Promise promise) {
         ReactApplicationContext context = getContext();
-        try{
-            int locationAccuracy = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
-            if (locationAccuracy == Settings.Secure.LOCATION_MODE_HIGH_ACCURACY){
-                promise.resolve(true);
-            }
-            else {
+        LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+
+        // API Level >= 28 Google Location Accuracy ON/OFF
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            promise.resolve(lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+        } else {
+            try{
+                // API Level < 28 Location accuracy has 3 modes - Device only, Battery Saver, High Accuracy
+                int locationAccuracy = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+                if (locationAccuracy == Settings.Secure.LOCATION_MODE_HIGH_ACCURACY){
+                    promise.resolve(true);
+                }
+                else {
+                    promise.resolve(false);
+                }
+            }catch (Settings.SettingNotFoundException e) {
                 promise.resolve(false);
+                e.printStackTrace();
             }
-        }catch (Settings.SettingNotFoundException e) {
-            promise.resolve(false);
-            e.printStackTrace();
         }
     }
 
