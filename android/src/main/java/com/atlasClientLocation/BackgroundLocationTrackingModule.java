@@ -7,8 +7,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
+import android.location.LocationManager;
+import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
+import android.provider.Settings;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -67,6 +71,62 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     @Override
     public String getName() {
         return "BackgroundLocationTracking";
+    }
+
+    @ReactMethod
+    public void checkPowerOptimizationSettings( Promise promise) {
+        ReactApplicationContext context = getContext();
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        Boolean result = pm.isIgnoringBatteryOptimizations(context.getPackageName());
+        promise.resolve(result);
+    }
+
+    @ReactMethod
+    public void showPowerOptimizationSettings() {
+        ReactApplicationContext context = getContext();
+        Intent settingsIntent = new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+        settingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (settingsIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
+            context.startActivity(settingsIntent);
+        }
+
+    }
+
+    @ReactMethod
+    public void checkSystemLocationAccuracySettings(Promise promise) {
+        ReactApplicationContext context = getContext();
+        LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+
+        // API Level >= 28 Google Location Accuracy ON/OFF
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            promise.resolve(lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+        } else {
+            try{
+                // API Level < 28 Location accuracy has 3 modes - Device only, Battery Saver, High Accuracy
+                int locationAccuracy = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+                if (locationAccuracy == Settings.Secure.LOCATION_MODE_HIGH_ACCURACY){
+                    promise.resolve(true);
+                }
+                else {
+                    promise.resolve(false);
+                }
+            }catch (Settings.SettingNotFoundException e) {
+                promise.resolve(false);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @ReactMethod
+    public void showSystemLocationAccuracySettings() {
+        ReactApplicationContext context = getContext();
+        Intent settingsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        settingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (settingsIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
+            context.startActivity(settingsIntent);
+        }
     }
 
     @ReactMethod

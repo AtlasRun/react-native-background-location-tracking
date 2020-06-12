@@ -12,6 +12,23 @@ class BackgroundLocationTracking {
     return await Module.getPoints();
   }
 
+  async checkPowerOptimizationSettings() {
+   return await Module.checkPowerOptimizationSettings();
+  }
+
+  showPowerOptimizationSettings() {
+     return Module.showPowerOptimizationSettings();
+  }
+
+  async checkSystemLocationAccuracySettings() {
+     return await Module.checkSystemLocationAccuracySettings();
+    }
+
+    showSystemLocationAccuracySettings() {
+       return Module.showSystemLocationAccuracySettings();
+    }
+
+
   startTracking() {
     return Module.requestLocation({});
   }
