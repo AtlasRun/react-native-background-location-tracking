@@ -154,11 +154,18 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void stopLocationTracking(){
+      try {
         Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
         myService.stopTracking();
-        getContext().unbindService(serviceConnection);
-        getContext().stopService(locationServiceIntent);
-        called = false;
+
+        if (isBound == true) {
+          getContext().unbindService(serviceConnection);
+          getContext().stopService(locationServiceIntent);
+          called = false;
+        }
+        } catch (IllegalArgumentException exception) {
+        } catch (Exception exception) {
+        }
     }
 
     @ReactMethod
@@ -221,6 +228,18 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         public void onServiceDisconnected(ComponentName componentName) {
             isBound = false;
         }
+
+        @Override
+        public void onBindingDied(ComponentName componentName) {
+            isBound = false;
+        }
+
+        @Override
+        public void onNullBinding(ComponentName componentName) {
+            isBound = false;
+        }
+
+
     };
 
     /**
