@@ -22,14 +22,14 @@ public class StateMachine {
                 this.onTransition(this.currentState, newState);
                 this.currentState = newState;
             }else{
-                Log.w(TAG, "illegal transition to"+ newState);
+//                Log.w(TAG, "illegal transition to"+ newState);
             }
         }else if(this.currentState == TrackingState.WAITING_FOR_SIGNAL.getValue()){
             if(newState == TrackingState.TRACKING_IN_PROGRESS.getValue()){
                 Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: WAITING_FOR_SIGNAL -> TRACKING_IN_PROGRESS");
                 this.currentState = newState;
             }else{
-                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
+//                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
             }
         } else if(this.currentState == TrackingState.TRACKING_IN_PROGRESS.getValue()){
             if(newState == TrackingState.NOT_TRACKING.getValue()){
@@ -37,7 +37,7 @@ public class StateMachine {
                 this.onTransition(this.currentState, newState);
                 this.currentState = newState;
             }else{
-                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
+//                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
             }
         }
     }
