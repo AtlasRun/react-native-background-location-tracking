@@ -154,7 +154,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         }else {
 //            Log.d(LOGTAG, "requestLocation: "+ LocationUtils.hasLocationPermission(context));
 //            android.util.Log.d(LOG_TAG, "locationServiceIntent: "+locationServiceIntent);
-//            Boolean isServiceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+            Boolean isServiceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
             if(!isServiceRunning){
                 getContext().startService(locationServiceIntent);
 
