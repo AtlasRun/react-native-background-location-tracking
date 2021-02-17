@@ -54,7 +54,7 @@ public class LocationService extends Service  {
 
     @Override
     public void onCreate() {
-        Log.d(LOG_TAG, "LocationService onCreate: called");
+//        Log.d(LOG_TAG, "LocationService onCreate: called");
         serializedPoints = LocationHelpers.readPersistedPoints(getApplicationContext());
 //        Log.w(LOG_TAG, "onCreate: "+ serializedPoints );
     }
@@ -101,7 +101,7 @@ public class LocationService extends Service  {
 
     @Override
     public void onRebind(Intent intent) {
-        android.util.Log.d(LOG_TAG, "onRebind: called");
+//        android.util.Log.d(LOG_TAG, "onRebind: called");
         super.onRebind(intent);
     }
 
@@ -129,7 +129,7 @@ public class LocationService extends Service  {
 
 
     public void stopService(){
-        Log.d(LOG_TAG,"stopSelf called");
+//        Log.d(LOG_TAG,"stopSelf called");
         stopSelf();
     }
 
