@@ -40,8 +40,9 @@ import com.google.android.gms.location.LocationServices;
 import androidx.annotation.Nullable;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import com.facebook.react.bridge.LifecycleEventListener;
 
-public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule {
+public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
 
     private final ReactApplicationContext reactContext;
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -62,15 +63,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public BackgroundLocationTrackingModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
-        android.util.Log.d(LOG_TAG, "BackgroundLocationTrackingModule: constructor invoked");
-//        Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
-//        if(serviceRunning){
-//            android.util.Log.d(LOG_TAG, "isServiceRunning constructor "+ serviceRunning);
-////            Boolean res = this.reactContext.bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
-//            android.util.Log.d(LOG_TAG, "boundService inside constructor: "+ res);
-//            Boolean serviceRunningAfterBind = isServiceRunning("com.atlasClientLocation.LocationService");
-//            Log.d(LOG_TAG, "serviceRunning After Bind: "+ serviceRunningAfterBind);
-//        }
+        this.reactContext.addLifecycleEventListener(this);
 
         BroadcastReceiver locationUpdatesReceiver = new BroadcastReceiver() {
             @Override
@@ -149,7 +142,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public void requestLocation(ReadableMap options) {
         if(called) return;
         called = true;
-        //Log.d(LOG_TAG, "request location called");
         ReactApplicationContext context = getContext();
 
         if(!LocationUtils.hasLocationPermission(context)){
@@ -162,16 +154,16 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
         }else {
 //            Log.d(LOGTAG, "requestLocation: "+ LocationUtils.hasLocationPermission(context));
 //            android.util.Log.d(LOG_TAG, "locationServiceIntent: "+locationServiceIntent);
-            Boolean isServiceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+//            Boolean isServiceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
             if(!isServiceRunning){
                 getContext().startService(locationServiceIntent);
 
-                Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
-                android.util.Log.d(LOG_TAG, "isServiceRunning startservice: "+ serviceRunning);
+//                Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+//                android.util.Log.d(LOG_TAG, "isServiceRunning startservice: "+ serviceRunning);
             }
             returnValueFromBoundService = getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
-            Boolean isServiceRunningRequestLocation = isServiceRunning("com.atlasClientLocation.LocationService");
-            android.util.Log.d(LOG_TAG, "isServiceRunning requestLocation "+ isServiceRunningRequestLocation);
+//            Boolean isServiceRunningRequestLocation = isServiceRunning("com.atlasClientLocation.LocationService");
+//            android.util.Log.d(LOG_TAG, "isServiceRunning requestLocation "+ isServiceRunningRequestLocation);
         }
 
     }
@@ -179,21 +171,17 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void stopLocationTracking(){
         try {
-//        Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
 
             myService.stopTracking();
 
             if (isBound == true) {
-//                getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
                 android.util.Log.d(LOG_TAG, "stopLocationTracking: called");
                 getContext().stopService(locationServiceIntent);
                 getContext().unbindService(serviceConnection);
-                android.util.Log.d(LOG_TAG, "stopLocationTracking: "+returnValueFromBoundService);
-//                myService.stopService();
                 called = false;
-                android.util.Log.d(LOG_TAG, "locationservicestopped: "+returnValueFromBoundService);
-                Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
-                android.util.Log.d(LOG_TAG, "isServiceRunning stopservice "+ serviceRunning);
+//                android.util.Log.d(LOG_TAG, "locationservicestopped: "+returnValueFromBoundService);
+//                Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+//                android.util.Log.d(LOG_TAG, "isServiceRunning stopservice "+ serviceRunning);
             }
         } catch (IllegalArgumentException exception) {
         } catch (Exception exception) {
@@ -249,7 +237,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            Log.d(LOG_TAG, "onServiceConnected called ");
+//            Log.d(LOG_TAG, "onServiceConnected called ");
             LocationService.LocalBinder localBinder = (LocationService.LocalBinder) iBinder;
             myService = localBinder.getService();
             myService.startTracking();
@@ -258,19 +246,19 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            android.util.Log.d(LOG_TAG, "onServiceDisconnected: called");
+//            android.util.Log.d(LOG_TAG, "onServiceDisconnected: called");
             isBound = false;
         }
 
         @Override
         public void onBindingDied(ComponentName componentName) {
-            android.util.Log.d(LOG_TAG, "onServiceDisconnected: onBindingDied");
+//            android.util.Log.d(LOG_TAG, "onServiceDisconnected: onBindingDied");
             isBound = false;
         }
 
         @Override
         public void onNullBinding(ComponentName componentName) {
-            android.util.Log.d(LOG_TAG, "onServiceDisconnected: onNullBinding");
+//            android.util.Log.d(LOG_TAG, "onServiceDisconnected: onNullBinding");
 
             isBound = false;
         }
@@ -318,5 +306,22 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             }
         }
         return serviceRunning;
+    }
+
+    @Override
+    public void onHostResume() {
+//        android.util.Log.d(LOG_TAG, "onHostResume");
+    }
+
+    @Override
+    public void onHostPause() {
+//        android.util.Log.d(LOG_TAG, "onHostPause");
+
+    }
+
+    @Override
+    public void onHostDestroy() {
+//        android.util.Log.d(LOG_TAG, "onHostDestroy");
+        getContext().unbindService(serviceConnection);
     }
 }
