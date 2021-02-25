@@ -13,9 +13,12 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
 import android.provider.Settings;
+import android.app.ActivityManager;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Iterator;
+import java.util.List;
 
 import com.facebook.react.bridge.Promise;
 
@@ -37,8 +40,9 @@ import com.google.android.gms.location.LocationServices;
 import androidx.annotation.Nullable;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import com.facebook.react.bridge.LifecycleEventListener;
 
-public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule {
+public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
 
     private final ReactApplicationContext reactContext;
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -47,15 +51,20 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public final String LOG_TAG = "TESTLOCATIONTRACKING";
     private LocationService myService;
     boolean isBound = false;
-    private volatile boolean called = false;
+    private boolean called = false;
     ArrayList<Map> persistedPoints = new ArrayList<>();
+    private boolean returnValueFromBoundService;
 
     public static final String LOGTAG = "PERMISSIONS";
+    Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
+
 
 
     public BackgroundLocationTrackingModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+        this.reactContext.addLifecycleEventListener(this);
+
         BroadcastReceiver locationUpdatesReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -133,7 +142,6 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     public void requestLocation(ReadableMap options) {
         if(called) return;
         called = true;
-        //Log.d(LOG_TAG, "request location called");
         ReactApplicationContext context = getContext();
 
         if(!LocationUtils.hasLocationPermission(context)){
@@ -145,24 +153,36 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
             );
         }else {
 //            Log.d(LOGTAG, "requestLocation: "+ LocationUtils.hasLocationPermission(context));
-            Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
-            getContext().startService(locationServiceIntent);
-            getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
+//            android.util.Log.d(LOG_TAG, "locationServiceIntent: "+locationServiceIntent);
+            Boolean isServiceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+            if(!isServiceRunning){
+                getContext().startService(locationServiceIntent);
+
+//                Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+//                android.util.Log.d(LOG_TAG, "isServiceRunning startservice: "+ serviceRunning);
+            }
+            returnValueFromBoundService = getContext().bindService(locationServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE );
+//            Boolean isServiceRunningRequestLocation = isServiceRunning("com.atlasClientLocation.LocationService");
+//            android.util.Log.d(LOG_TAG, "isServiceRunning requestLocation "+ isServiceRunningRequestLocation);
         }
 
     }
 
     @ReactMethod
     public void stopLocationTracking(){
-      try {
-        Intent locationServiceIntent = new Intent(getContext(), LocationService.class);
-        myService.stopTracking();
+        try {
 
-        if (isBound == true) {
-          getContext().unbindService(serviceConnection);
-          getContext().stopService(locationServiceIntent);
-          called = false;
-        }
+            myService.stopTracking();
+
+            if (isBound == true) {
+                android.util.Log.d(LOG_TAG, "stopLocationTracking: called");
+                getContext().stopService(locationServiceIntent);
+                getContext().unbindService(serviceConnection);
+                called = false;
+//                android.util.Log.d(LOG_TAG, "locationservicestopped: "+returnValueFromBoundService);
+//                Boolean serviceRunning = isServiceRunning("com.atlasClientLocation.LocationService");
+//                android.util.Log.d(LOG_TAG, "isServiceRunning stopservice "+ serviceRunning);
+            }
         } catch (IllegalArgumentException exception) {
         } catch (Exception exception) {
         }
@@ -170,15 +190,15 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void getPoints(
-      Promise promise) {
+            Promise promise) {
 
         if(myService == null) {
             persistedPoints = LocationHelpers.readPersistedPoints(getContext());
         } else {
-          persistedPoints = myService.getPoints();
+            persistedPoints = myService.getPoints();
         }
-            WritableArray out = LocationHelpers.convertToWritableArray(persistedPoints);
-            promise.resolve(out);
+        WritableArray out = LocationHelpers.convertToWritableArray(persistedPoints);
+        promise.resolve(out);
 
     }
 
@@ -195,7 +215,7 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
                 // {lat: 4, long: 5}
                 Map point = persistedPoints.get(i);
 
-            // Putting {lat: 4, long: 5} => WritableMap
+                // Putting {lat: 4, long: 5} => WritableMap
                 map.putDouble("latitude", (double) point.get("latitude"));
                 map.putDouble("longitude", (double) point.get("longitude"));
                 map.putDouble("timestamp", (double) point.get("timestamp"));
@@ -226,16 +246,20 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+//            android.util.Log.d(LOG_TAG, "onServiceDisconnected: called");
             isBound = false;
         }
 
         @Override
         public void onBindingDied(ComponentName componentName) {
+//            android.util.Log.d(LOG_TAG, "onServiceDisconnected: onBindingDied");
             isBound = false;
         }
 
         @Override
         public void onNullBinding(ComponentName componentName) {
+//            android.util.Log.d(LOG_TAG, "onServiceDisconnected: onNullBinding");
+
             isBound = false;
         }
 
@@ -263,4 +287,41 @@ public class BackgroundLocationTrackingModule extends ReactContextBaseJavaModule
     }
 
 
+    private boolean isServiceRunning(String serviceName) {
+        boolean serviceRunning = false;
+        ActivityManager am = (ActivityManager) getContext().getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> l = am.getRunningServices(50);
+
+        Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
+        while (i.hasNext()) {
+            ActivityManager.RunningServiceInfo runningServiceInfo = i
+                    .next();
+//            android.util.Log.d(LOG_TAG, "isServiceRunning: " + runningServiceInfo.service.getClassName());
+            if (runningServiceInfo.service.getClassName().equals(serviceName)) {
+                serviceRunning = true;
+
+                if (runningServiceInfo.foreground) {
+                    //service run in foreground
+                }
+            }
+        }
+        return serviceRunning;
+    }
+
+    @Override
+    public void onHostResume() {
+//        android.util.Log.d(LOG_TAG, "onHostResume");
+    }
+
+    @Override
+    public void onHostPause() {
+//        android.util.Log.d(LOG_TAG, "onHostPause");
+
+    }
+
+    @Override
+    public void onHostDestroy() {
+//        android.util.Log.d(LOG_TAG, "onHostDestroy");
+        getContext().unbindService(serviceConnection);
+    }
 }

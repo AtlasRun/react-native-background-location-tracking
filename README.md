@@ -1,5 +1,6 @@
 # react-native-background-location-tracking
 
+## ** This is an Alpha Release **
 ## Getting started
 
 `$ npm install react-native-background-location-tracking --save`

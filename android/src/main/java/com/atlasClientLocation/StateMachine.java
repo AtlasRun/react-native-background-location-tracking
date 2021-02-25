@@ -18,26 +18,26 @@ public class StateMachine {
 
         if(this.currentState == TrackingState.NOT_TRACKING.getValue()){
             if(newState == TrackingState.WAITING_FOR_SIGNAL.getValue()){
-                Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: NOT_TRACKING -> WAITING_FOR_SIGNAL");
+//                Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: NOT_TRACKING -> WAITING_FOR_SIGNAL");
                 this.onTransition(this.currentState, newState);
                 this.currentState = newState;
             }else{
-                Log.w(TAG, "illegal transition to"+ newState);
+//                Log.w(TAG, "illegal transition to"+ newState);
             }
         }else if(this.currentState == TrackingState.WAITING_FOR_SIGNAL.getValue()){
             if(newState == TrackingState.TRACKING_IN_PROGRESS.getValue()){
-                Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: WAITING_FOR_SIGNAL -> TRACKING_IN_PROGRESS");
+//                Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: WAITING_FOR_SIGNAL -> TRACKING_IN_PROGRESS");
                 this.currentState = newState;
             }else{
-                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
+//                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
             }
         } else if(this.currentState == TrackingState.TRACKING_IN_PROGRESS.getValue()){
             if(newState == TrackingState.NOT_TRACKING.getValue()){
-                Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: TRACKING_IN_PROGRESS -> NOT_TRACKING");
+//                Log.d(TAG, "SUCCESSFULLY TRANSITIONED FROM: TRACKING_IN_PROGRESS -> NOT_TRACKING");
                 this.onTransition(this.currentState, newState);
                 this.currentState = newState;
             }else{
-                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
+//                Log.w(TAG, "illegal transition from "+ this.currentState + " -> " + newState);
             }
         }
     }
