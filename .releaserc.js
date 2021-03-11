@@ -1,7 +1,7 @@
 const config = {
     branches: [
       {
-        name: "ft-setup-semantic-release",
+        name: "ft-set-up-semantic-release",
       },
       {
         name: "develop",

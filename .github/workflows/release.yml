@@ -3,7 +3,7 @@ name: Release npm package
 on:
   push:
     branches:
-      - ft-setup-semantic-release
+      - ft-set-up-semantic-release
 
 jobs:
   release:
