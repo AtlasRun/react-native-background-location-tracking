@@ -28,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 
 
 public class LocationService extends Service  {
@@ -38,6 +39,7 @@ public class LocationService extends Service  {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
+    private int serviceId;
 
     private final IBinder serviceBinder = new LocalBinder();
     StateMachine stateMachine = new StateMachine(this);
@@ -50,17 +52,19 @@ public class LocationService extends Service  {
     public LocationService() {
         fos = null;
 
+        Random rand = new Random();
+        serviceId = rand.nextInt();
     }
 
     @Override
     public void onCreate() {
+//        Log.d(LOG_TAG, "LocationService onCreate: called");
         serializedPoints = LocationHelpers.readPersistedPoints(getApplicationContext());
 //        Log.w(LOG_TAG, "onCreate: "+ serializedPoints );
     }
 
     public void _startTracking(){
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
         buildLocationRequest();
         buildLocationCallback();
 
@@ -74,8 +78,7 @@ public class LocationService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-//        Intent intent1 = new Intent(this, BackgroundLocationTrackingModule.class);
-//        intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Log.d(LOG_TAG, serviceId+"LocationService onStartCommand: called");
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
@@ -90,8 +93,20 @@ public class LocationService extends Service  {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-//        Log.d(LOG_TAG, "onBind: IS CALLED");
+        Log.d(LOG_TAG, serviceId+"onBind: called");
         return serviceBinder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent){
+        android.util.Log.d(LOG_TAG, serviceId+"onUnbind: called");
+        return true;
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        android.util.Log.d(LOG_TAG, serviceId+"onRebind: called");
+        super.onRebind(intent);
     }
 
     public class LocalBinder extends Binder {
@@ -106,18 +121,27 @@ public class LocationService extends Service  {
 
 
     public void startTracking(){
+        Log.d(LOG_TAG, serviceId+"LocationService startTracking: called");
         stateMachine.setState(TrackingState.WAITING_FOR_SIGNAL.getValue());
     }
 
     public void stopTracking(){
         stateMachine.setState(TrackingState.NOT_TRACKING.getValue());
+        Log.d(LOG_TAG,serviceId+"LocationService stopTracking called");
+        stopForeground(true);
+    }
+
+
+    public void stopService(){
+//        Log.d(LOG_TAG,"stopSelf called");
+        stopSelf();
     }
 
 
 
 
-
     public void createNotificationChannel() {
+//        Log.d(LOG_TAG,"LocationService createNotificationChannel called");
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             //Log.d(LOG_TAG, "notification channel called");
 
@@ -134,6 +158,7 @@ public class LocationService extends Service  {
     }
 
     private void buildLocationRequest() {
+//        Log.d(LOG_TAG,"LocationService buildLocationRequest called");
         locationRequest = new LocationRequest();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         locationRequest.setInterval(6500);
@@ -143,6 +168,7 @@ public class LocationService extends Service  {
     private void buildLocationCallback() {
 
         try{
+            Log.d(LOG_TAG,serviceId+"LocationService buildLocationRequest called");
             String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
             File file = new File(path);
             file.createNewFile();
@@ -161,7 +187,7 @@ public class LocationService extends Service  {
 
                     @Override
                     public void onLocationResult(LocationResult locationResult) {
-                       // Log.d(LOG_TAG, "LocationCallbacks entered");
+                        // Log.d(LOG_TAG, "LocationCallbacks entered");
                         if(locationResult == null) {
                             return;
 
@@ -197,6 +223,7 @@ public class LocationService extends Service  {
 
     @Override
     public void onDestroy(){
+        Log.d(LOG_TAG, serviceId+"onDestroy called");
         super.onDestroy();
         stopSelf();
     }
