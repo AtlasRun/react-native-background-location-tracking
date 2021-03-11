@@ -28,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 
 
 public class LocationService extends Service  {
@@ -38,6 +39,7 @@ public class LocationService extends Service  {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
+    private int serviceId;
 
     private final IBinder serviceBinder = new LocalBinder();
     StateMachine stateMachine = new StateMachine(this);
@@ -50,6 +52,8 @@ public class LocationService extends Service  {
     public LocationService() {
         fos = null;
 
+        Random rand = new Random();
+        serviceId = rand.nextInt();
     }
 
     @Override
@@ -74,7 +78,7 @@ public class LocationService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-//        Log.d(LOG_TAG, "LocationService onStartCommand: called");
+        Log.d(LOG_TAG, serviceId+"LocationService onStartCommand: called");
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
@@ -89,19 +93,19 @@ public class LocationService extends Service  {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-//        Log.d(LOG_TAG, "onBind: called");
+        Log.d(LOG_TAG, serviceId+"onBind: called");
         return serviceBinder;
     }
 
     @Override
     public boolean onUnbind(Intent intent){
-//        android.util.Log.d(LOG_TAG, "onUnbind: called");
+        android.util.Log.d(LOG_TAG, serviceId+"onUnbind: called");
         return true;
     }
 
     @Override
     public void onRebind(Intent intent) {
-//        android.util.Log.d(LOG_TAG, "onRebind: called");
+        android.util.Log.d(LOG_TAG, serviceId+"onRebind: called");
         super.onRebind(intent);
     }
 
@@ -117,13 +121,13 @@ public class LocationService extends Service  {
 
 
     public void startTracking(){
-//        Log.d(LOG_TAG, "LocationService startTracking: called");
+        Log.d(LOG_TAG, serviceId+"LocationService startTracking: called");
         stateMachine.setState(TrackingState.WAITING_FOR_SIGNAL.getValue());
     }
 
     public void stopTracking(){
         stateMachine.setState(TrackingState.NOT_TRACKING.getValue());
-//        Log.d(LOG_TAG,"LocationService stopTracking called");
+        Log.d(LOG_TAG,serviceId+"LocationService stopTracking called");
         stopForeground(true);
     }
 
@@ -164,7 +168,7 @@ public class LocationService extends Service  {
     private void buildLocationCallback() {
 
         try{
-            Log.d(LOG_TAG,"LocationService buildLocationRequest called");
+            Log.d(LOG_TAG,serviceId+"LocationService buildLocationRequest called");
             String path = getApplicationContext().getFilesDir().getPath().toString()+"/locationData.txt";
             File file = new File(path);
             file.createNewFile();
@@ -219,7 +223,7 @@ public class LocationService extends Service  {
 
     @Override
     public void onDestroy(){
-//        Log.d(LOG_TAG, "onDestroy called");
+        Log.d(LOG_TAG, serviceId+"onDestroy called");
         super.onDestroy();
         stopSelf();
     }
